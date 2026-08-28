@@ -1,0 +1,21 @@
+# Environment / secrets
+.env
+.env.local
+
+# Database configuration
+config.local.php
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+
+# Windows files
+Thumbs.db
+
+# macOS files
+.DS_Store
+
+# VS Code settings
+.vscode/
