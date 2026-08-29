@@ -1,151 +1,181 @@
 <?php
 session_start();
+require_once 'php/db.php';
+
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit();
 }
-$username = $_SESSION['username'];
+
+$user_id = $_SESSION['user_id'];
+
+$stmt = $conn->prepare("SELECT username, full_name, gender, bio, tag FROM users WHERE id = ?");
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$user = $stmt->get_result()->fetch_assoc();
+$stmt->close();
+
+$stmt = $conn->prepare("SELECT platform, url FROM social_links WHERE user_id = ? ORDER BY id DESC");
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$socialLinks = $stmt->get_result();
+$stmt->close();
+
+$stmt = $conn->prepare("SELECT title, description, price FROM user_services WHERE user_id = ? ORDER BY id DESC");
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$myServices = $stmt->get_result();
+$stmt->close();
+
+$stmt = $conn->prepare("SELECT title, type, price FROM user_assets WHERE user_id = ? ORDER BY id DESC");
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$myAssets = $stmt->get_result();
+$stmt->close();
+
+$stmt = $conn->prepare("SELECT title, category FROM user_materials WHERE user_id = ? ORDER BY id DESC");
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$myMaterials = $stmt->get_result();
+$stmt->close();
+
+$displayName = $user['full_name'] ?: $user['username'];
+$tag = ucfirst($user['tag'] ?? 'normal');
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EditHub - My Profile</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
-        body { background-color: #0b0d14; color: #ffffff; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title><?php echo htmlspecialchars($displayName); ?> - EditHub Profile</title>
+<style>
+    * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Roboto, sans-serif; }
+    body { background:#090a10; color:#fff; }
 
-        /* Navbar with matching theme */
-        .navbar { display: flex; justify-content: space-between; align-items: center; padding: 18px 40px; background: rgba(15, 17, 26, 0.9); border-bottom: 1px solid #1f2430; position: sticky; top: 0; z-index: 100; }
-        .logo { font-size: 24px; font-weight: 800; color: #ffffff; text-decoration: none; }
-        .logo span { color: #8b5cf6; }
-        .nav-links { display: flex; gap: 25px; list-style: none; align-items: center; }
-        .nav-links a { color: #9ca3af; text-decoration: none; font-size: 14px; font-weight: 600; transition: 0.3s; }
-        .nav-links a:hover, .nav-links a.active { color: #8b5cf6; }
-        .btn-logout { background: #8b5cf6; color: #fff; padding: 8px 18px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 14px; transition: 0.3s; }
-        .btn-logout:hover { background: #7c3aed; }
+    .navbar { display:flex; justify-content:space-between; align-items:center; padding:16px 45px; background:rgba(9,10,16,0.95); border-bottom:1px solid #1a1c28; position:sticky; top:0; }
+    .logo { font-size:22px; font-weight:800; color:#fff; text-decoration:none; }
+    .logo span { color:#8b5cf6; }
+    .navbar nav a { color:#9ca3af; text-decoration:none; margin-left:22px; font-size:14px; font-weight:600; }
+    .navbar nav a:hover { color:#8b5cf6; }
 
-        /* Main Profile Layout */
-        .container { max-width: 1100px; margin: 40px auto; padding: 0 20px; }
-        .profile-card { background: #161922; border: 1px solid #232836; border-radius: 14px; padding: 30px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; }
-        .user-info h2 { font-size: 24px; color: #fff; }
-        .user-info p { color: #a78bfa; margin-top: 5px; font-weight: 500; }
-        .badge { background: rgba(139, 92, 246, 0.2); color: #a78bfa; border: 1px solid #8b5cf6; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+    .wrap { max-width: 800px; margin: 40px auto; padding: 0 20px 80px; }
 
-        /* Sections Grid */
-        .section-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
-        .panel { background: #161922; border: 1px solid #232836; border-radius: 14px; padding: 25px; }
-        .panel-title { font-size: 18px; font-weight: 700; margin-bottom: 20px; color: #f3f4f6; display: flex; justify-content: space-between; align-items: center; }
-        .panel-title span { color: #8b5cf6; }
+    .profile-header { background:#11131c; border:1px solid #1f2333; border-radius:14px; padding:30px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:28px; }
+    .avatar-circle { width:70px; height:70px; border-radius:50%; background:linear-gradient(135deg,#8b5cf6,#6366f1); display:flex; align-items:center; justify-content:center; font-size:26px; font-weight:800; }
+    .profile-main { display:flex; gap:18px; align-items:center; }
+    .profile-name { font-size:22px; font-weight:800; }
+    .profile-meta { color:#9ca3af; font-size:13px; margin-top:4px; }
+    .tag-pill { display:inline-block; padding:4px 12px; border-radius:20px; background:rgba(139,92,246,0.15); color:#a78bfa; font-size:12px; font-weight:700; margin-top:8px; }
+    .btn-edit { background:#8b5cf6; color:#fff; padding:10px 20px; border-radius:8px; text-decoration:none; font-weight:700; font-size:13px; white-space:nowrap; }
+    .btn-edit:hover { background:#7c3aed; }
 
-        /* Forms & Inputs */
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-size: 13px; color: #9ca3af; margin-bottom: 6px; }
-        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #232836; background: #0f111a; color: #fff; font-size: 14px; outline: none; }
-        .form-group input:focus, .form-group textarea:focus { border-color: #8b5cf6; }
-        .btn-add { background: #8b5cf6; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; transition: 0.3s; }
-        .btn-add:hover { background: #7c3aed; }
+    .card { background:#11131c; border:1px solid #1f2333; border-radius:12px; padding:24px; margin-bottom:24px; }
+    .card h3 { font-size:16px; margin-bottom:16px; }
+    .bio-text { color:#c9ccd6; font-size:14px; line-height:1.6; }
+    .empty-msg { color:#6b7280; font-size:13px; }
 
-        /* Existing Items List */
-        .item-list { margin-top: 20px; display: flex; flex-direction: column; gap: 12px; }
-        .item-card { background: #0f111a; border: 1px solid #232836; padding: 12px 16px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
-        .item-card h4 { font-size: 14px; color: #fff; }
-        .item-card p { font-size: 12px; color: #9ca3af; }
-        .price-tag { color: #8b5cf6; font-weight: 700; font-size: 14px; }
-    </style>
+    .social-links { display:flex; flex-wrap:wrap; gap:10px; }
+    .social-chip { background:#090a10; border:1px solid #232738; padding:8px 14px; border-radius:20px; font-size:13px; text-decoration:none; color:#d1d5db; }
+    .social-chip:hover { border-color:#8b5cf6; color:#a78bfa; }
+
+    .list-item { background:#090a10; border:1px solid #1f2333; border-radius:8px; padding:12px 16px; margin-bottom:10px; }
+    .list-item h4 { font-size:14px; }
+    .list-item p { font-size:12px; color:#9ca3af; margin-top:2px; }
+    .badge { display:inline-block; font-size:11px; padding:2px 8px; border-radius:12px; background:rgba(139,92,246,0.15); color:#a78bfa; margin-left:6px; }
+</style>
 </head>
 <body>
 
-    <!-- Matching Navbar -->
-    <header class="navbar">
-        <a href="index.php" class="logo">EDIT<span>HUB</span></a>
-        <ul class="nav-links">
-            <li><a href="index.php">Home</a></li>
-            <li><a href="index.php#services">Services</a></li>
-            <li><a href="index.php#assets">Assets</a></li>
-            <li><a href="profile.php" class="active">Profile</a></li>
-        </ul>
-        <a href="php/logout.php" class="btn-logout">Logout</a>
-    </header>
+<header class="navbar">
+    <a href="home.php" class="logo">Edit<span>Hub</span></a>
+    <nav>
+        <a href="home.php">Home</a>
+        <a href="services.php">Services</a>
+        <a href="assets.php">Assets</a>
+        <a href="profile.php">Profile</a>
+        <a href="php/logout.php">Logout</a>
+    </nav>
+</header>
 
-    <div class="container">
-        <!-- User Info Banner -->
-        <div class="profile-card">
-            <div class="user-info">
-                <h2>Username: <?php echo htmlspecialchars($username); ?></h2>
-                <p>Creator / Editor Account</p>
-            </div>
-            <span class="badge">Active Member</span>
-        </div>
+<div class="wrap">
 
-        <div class="section-grid">
-            <!-- Manage Services (Hire Me Rates) -->
-            <div class="panel">
-                <div class="panel-title"><span>💼</span> My Personal Services (Hire Me)</div>
-                <form action="#" method="POST">
-                    <div class="form-group">
-                        <label>Service Title (e.g., Reels Editing, VFX Composition)</label>
-                        <input type="text" placeholder="Enter service name..." required>
-                    </div>
-                    <div class="form-group">
-                        <label>Hourly / Project Rate (₹)</label>
-                        <input type="text" placeholder="e.g., ₹1,500 / hr" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Description</label>
-                        <textarea rows="2" placeholder="Brief details about your editing service..."></textarea>
-                    </div>
-                    <button type="submit" class="btn-add">+ Add Service Option</button>
-                </form>
-
-                <div class="item-list">
-                    <div class="item-card">
-                        <div>
-                            <h4>Reels & Shorts Editing</h4>
-                            <p>Fast pacing & dynamic captions</p>
-                        </div>
-                        <span class="price-tag">₹1,500/hr</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Manage Assets -->
-            <div class="panel">
-                <div class="panel-title"><span>📦</span> My Uploaded Assets</div>
-                <form action="#" method="POST">
-                    <div class="form-group">
-                        <label>Asset Name</label>
-                        <input type="text" placeholder="e.g., Cinematic LUT Pack" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Category</label>
-                        <select>
-                            <option>PNG Cutouts</option>
-                            <option>SFX Sound Effects</option>
-                            <option>CC & Presets</option>
-                            <option>VFX Overlays</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Download Link / Drive URL</label>
-                        <input type="url" placeholder="https://..." required>
-                    </div>
-                    <button type="submit" class="btn-add">+ Upload Asset</button>
-                </form>
-
-                <div class="item-list">
-                    <div class="item-card">
-                        <div>
-                            <h4>4K Dark Cinematic CC</h4>
-                            <p>Category: CC & Presets</p>
-                        </div>
-                        <span class="price-tag">Free</span>
-                    </div>
-                </div>
+    <div class="profile-header">
+        <div class="profile-main">
+            <div class="avatar-circle"><?php echo strtoupper(substr($displayName, 0, 1)); ?></div>
+            <div>
+                <div class="profile-name"><?php echo htmlspecialchars($displayName); ?></div>
+                <div class="profile-meta">@<?php echo htmlspecialchars($user['username']); ?> <?php echo $user['gender'] ? '• ' . ucfirst($user['gender']) : ''; ?></div>
+                <span class="tag-pill"><?php echo htmlspecialchars($tag); ?></span>
             </div>
         </div>
+        <a href="edit_profile.php" class="btn-edit">✏️ Edit Profile</a>
     </div>
+
+    <div class="card">
+        <h3>About</h3>
+        <?php if (!empty($user['bio'])): ?>
+            <p class="bio-text"><?php echo nl2br(htmlspecialchars($user['bio'])); ?></p>
+        <?php else: ?>
+            <p class="empty-msg">No bio added yet.</p>
+        <?php endif; ?>
+    </div>
+
+    <div class="card">
+        <h3>🔗 Social Links</h3>
+        <?php if ($socialLinks->num_rows > 0): ?>
+            <div class="social-links">
+                <?php while ($link = $socialLinks->fetch_assoc()): ?>
+                    <a href="<?php echo htmlspecialchars($link['url']); ?>" target="_blank" class="social-chip"><?php echo htmlspecialchars($link['platform']); ?></a>
+                <?php endwhile; ?>
+            </div>
+        <?php else: ?>
+            <p class="empty-msg">No social links added yet.</p>
+        <?php endif; ?>
+    </div>
+
+    <div class="card">
+        <h3>🎬 My Services (Hire Me)</h3>
+        <?php if ($myServices->num_rows > 0): ?>
+            <?php while ($s = $myServices->fetch_assoc()): ?>
+                <div class="list-item">
+                    <h4><?php echo htmlspecialchars($s['title']); ?></h4>
+                    <p><?php echo htmlspecialchars($s['description']); ?> <?php echo $s['price'] ? '• ₹' . htmlspecialchars($s['price']) : ''; ?></p>
+                </div>
+            <?php endwhile; ?>
+        <?php else: ?>
+            <p class="empty-msg">No services added yet.</p>
+        <?php endif; ?>
+    </div>
+
+    <div class="card">
+        <h3>📦 My Uploaded Assets</h3>
+        <?php if ($myAssets->num_rows > 0): ?>
+            <?php while ($a = $myAssets->fetch_assoc()): ?>
+                <div class="list-item">
+                    <h4><?php echo htmlspecialchars($a['title']); ?> <span class="badge"><?php echo ucfirst($a['type']); ?></span></h4>
+                    <p><?php echo $a['type'] === 'paid' ? '₹' . htmlspecialchars($a['price']) : 'Free'; ?></p>
+                </div>
+            <?php endwhile; ?>
+        <?php else: ?>
+            <p class="empty-msg">No assets uploaded yet.</p>
+        <?php endif; ?>
+    </div>
+
+    <div class="card">
+        <h3>🖼️ My Uploaded Materials</h3>
+        <?php if ($myMaterials->num_rows > 0): ?>
+            <?php while ($m = $myMaterials->fetch_assoc()): ?>
+                <div class="list-item">
+                    <h4><?php echo htmlspecialchars($m['title']); ?></h4>
+                    <p><?php echo htmlspecialchars($m['category']); ?></p>
+                </div>
+            <?php endwhile; ?>
+        <?php else: ?>
+            <p class="empty-msg">No materials uploaded yet.</p>
+        <?php endif; ?>
+    </div>
+
+</div>
 
 </body>
 </html>
