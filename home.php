@@ -9,10 +9,18 @@ if (!isset($_SESSION['user_id'])) {
 
 $username = $_SESSION['username'] ?? 'User';
 
-// Dynamic materials (uploaded by all users)
-$materials = $conn->query("SELECT title, category FROM user_materials ORDER BY created_at DESC LIMIT 8");
+// 1. Dynamic materials (uploaded by all users)
+$materials = $conn->query("SELECT title, category, file_path FROM user_materials ORDER BY created_at DESC LIMIT 8");
 
-// Dynamic hire-me services (uploaded by all users) + basic profile info
+// 2. Dynamic assets (uploaded by all users) - NEWLY ADDED
+$assets = $conn->query("
+    SELECT ua.title, ua.type, ua.price, ua.file_path, u.username 
+    FROM user_assets ua
+    JOIN users u ON ua.user_id = u.id
+    ORDER BY ua.created_at DESC LIMIT 8
+");
+
+// 3. Dynamic hire-me services (uploaded by all users)
 $editors = $conn->query("
     SELECT us.id, us.title, us.description, us.price, u.username, u.full_name, u.tag
     FROM user_services us
@@ -75,14 +83,17 @@ $categoryIcons = ['PNG' => '🖼️', 'SFX' => '🔊', 'CC' => '🎨', 'VFX' => 
         .main-container { max-width: 1100px; margin: 0 auto; padding: 0 20px 80px 20px; }
         .section-header { margin-bottom: 22px; }
         .section-title { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-        .section-subtitle { font-size: 13px; color: #9ca3af; margin-top: 4px; }
 
-        .materials-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 18px; margin-bottom: 60px; }
-        .material-card { background: #11131c; border-radius: 12px; padding: 22px; border: 1px solid #1f2333; transition: 0.3s; }
-        .material-card:hover { transform: translateY(-3px); border-color: #8b5cf6; }
-        .material-icon { width: 44px; height: 44px; border-radius: 8px; background: rgba(139, 92, 246, 0.12); display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 14px; }
-        .material-title { font-weight: 700; font-size: 16px; margin-bottom: 8px; }
-        .material-desc { font-size: 12px; color: #9ca3af; line-height: 1.5; }
+        .materials-grid, .assets-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 18px; margin-bottom: 60px; }
+        
+        .material-card, .asset-card { background: #11131c; border-radius: 12px; padding: 22px; border: 1px solid #1f2333; transition: 0.3s; position: relative; }
+        .material-card:hover, .asset-card:hover { transform: translateY(-3px); border-color: #8b5cf6; }
+        .material-icon, .asset-icon { width: 44px; height: 44px; border-radius: 8px; background: rgba(139, 92, 246, 0.12); display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 14px; }
+        .material-title, .asset-title { font-weight: 700; font-size: 16px; margin-bottom: 8px; }
+        .material-desc, .asset-desc { font-size: 12px; color: #9ca3af; line-height: 1.5; }
+        .badge { position: absolute; top: 16px; right: 16px; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+        .badge-free { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .badge-paid { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
 
         .editors-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; }
         .editor-card { background: #11131c; border-radius: 10px; padding: 18px; border: 1px solid #1f2333; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; }
@@ -90,9 +101,9 @@ $categoryIcons = ['PNG' => '🖼️', 'SFX' => '🔊', 'CC' => '🎨', 'VFX' => 
         .editor-info h4 { font-size: 15px; font-weight: 700; }
         .editor-info p { font-size: 12px; color: #9ca3af; margin-top: 2px; }
         .editor-meta { font-size: 12px; color: #a78bfa; margin-top: 4px; font-weight: 600; }
-        .btn-hire { background: #8b5cf6; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
-        .btn-hire:hover { background: #7c3aed; }
-        .empty-msg { color: #6b7280; font-size: 13px; }
+        .btn-hire, .btn-download { background: #8b5cf6; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; }
+        .btn-hire:hover, .btn-download:hover { background: #7c3aed; }
+        .empty-msg { color: #6b7280; font-size: 13px; grid-column: 1 / -1; }
     </style>
 </head>
 <body>
@@ -112,8 +123,7 @@ $categoryIcons = ['PNG' => '🖼️', 'SFX' => '🔊', 'CC' => '🎨', 'VFX' => 
             <li>
                 <a>Assets <span class="caret">▾</span></a>
                 <ul class="dropdown-menu">
-                    <li><a href="assets.php#free">Free Assets</a></li>
-                    <li><a href="assets.php#paid">Paid Assets</a></li>
+                    <li><a href="#assets">Free & Paid Assets</a></li>
                 </ul>
             </li>
             <li><a href="#materials">Materials</a></li>
@@ -128,21 +138,47 @@ $categoryIcons = ['PNG' => '🖼️', 'SFX' => '🔊', 'CC' => '🎨', 'VFX' => 
     </header>
 
     <section class="hero">
-        <div class="search-box">
-            <span class="search-icon">🔍</span>
-            <input type="text" class="search-input" placeholder="Search 5,000+ PNGs, SFX, CC Presets or Editors...">
-        </div>
+        <form action="search.php" method="GET">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" name="q" class="search-input" placeholder="Search 5,000+ PNGs, SFX, CC Presets or Editors...">
+            </div>
+        </form>
         <h1 class="hero-title">Best Edit Materials & Top Video<br>Editors in 2026</h1>
         <p class="hero-subtitle">Get high-quality PNGs, Sound Effects (SFX), Motion Presets, Color Grading CC packs, or hire expert freelance video editors for your next viral project.</p>
         <div class="hero-btns">
             <a href="#editors" class="btn-primary">Hire Video Editors</a>
-            <a href="#materials" class="btn-secondary">Explore Asset Packs</a>
+            <a href="#assets" class="btn-secondary">Explore Assets</a>
         </div>
     </section>
 
     <div class="main-container">
 
-        <!-- Materials Section (dynamic) -->
+        <!-- Assets Section (NEWLY ADDED) -->
+        <section id="assets">
+            <div class="section-header">
+                <div class="section-title">📦 Community Assets</div>
+            </div>
+            <div class="assets-grid">
+                <?php if ($assets && $assets->num_rows > 0): ?>
+                    <?php while ($a = $assets->fetch_assoc()): ?>
+                        <div class="asset-card">
+                            <span class="badge <?php echo $a['type'] === 'paid' ? 'badge-paid' : 'badge-free'; ?>">
+                                <?php echo $a['type'] === 'paid' ? '₹' . htmlspecialchars($a['price']) : 'FREE'; ?>
+                            </span>
+                            <div class="asset-icon">📦</div>
+                            <div class="asset-title"><?php echo htmlspecialchars($a['title']); ?></div>
+                            <div class="asset-desc" style="margin-bottom: 12px;">Uploaded by @<?php echo htmlspecialchars($a['username']); ?></div>
+                            <a href="<?php echo htmlspecialchars($a['file_path']); ?>" class="btn-download" download>Download</a>
+                        </div>
+                    <?php endwhile; ?>
+                <?php else: ?>
+                    <p class="empty-msg">No assets uploaded yet. Be the first — upload from your profile!</p>
+                <?php endif; ?>
+            </div>
+        </section>
+
+        <!-- Materials Section -->
         <section id="materials">
             <div class="section-header">
                 <div class="section-title">🖼️ Editing Materials & Resources</div>
@@ -162,7 +198,7 @@ $categoryIcons = ['PNG' => '🖼️', 'SFX' => '🔊', 'CC' => '🎨', 'VFX' => 
             </div>
         </section>
 
-        <!-- Hire Editors Section (dynamic) -->
+        <!-- Hire Editors Section -->
         <section id="editors">
             <div class="section-header">
                 <div class="section-title">🎬 Hire Freelance Video Editors</div>
