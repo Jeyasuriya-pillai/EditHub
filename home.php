@@ -9,26 +9,43 @@ if (!isset($_SESSION['user_id'])) {
 
 $username = $_SESSION['username'] ?? 'User';
 
-// 1. Dynamic materials (uploaded by all users)
-$materials = $conn->query("SELECT title, category, file_path FROM user_materials ORDER BY created_at DESC LIMIT 8");
-
-// 2. Dynamic assets (uploaded by all users) - NEWLY ADDED
-$assets = $conn->query("
-    SELECT ua.title, ua.type, ua.price, ua.file_path, u.username 
-    FROM user_assets ua
-    JOIN users u ON ua.user_id = u.id
-    ORDER BY ua.created_at DESC LIMIT 8
+// Dynamic materials with thumbnail + ratings
+$materials = $conn->query("
+    SELECT um.id, um.title, um.category, um.thumbnail,
+           COALESCE(AVG(r.rating),0) AS avg_rating, COUNT(r.id) AS review_count
+    FROM user_materials um
+    LEFT JOIN reviews r ON r.target_type = 'material' AND r.target_id = um.id
+    GROUP BY um.id
+    ORDER BY um.created_at DESC LIMIT 8
 ");
 
-// 3. Dynamic hire-me services (uploaded by all users)
+// Dynamic hire-me services with thumbnail-less rating info
 $editors = $conn->query("
-    SELECT us.id, us.title, us.description, us.price, u.username, u.full_name, u.tag
+    SELECT us.id, us.title, us.description, us.price, u.id AS owner_id, u.username, u.full_name,
+           COALESCE(AVG(r.rating),0) AS avg_rating, COUNT(r.id) AS review_count
     FROM user_services us
     JOIN users u ON us.user_id = u.id
+    LEFT JOIN reviews r ON r.target_type = 'service' AND r.target_id = us.id
+    GROUP BY us.id
     ORDER BY us.created_at DESC LIMIT 12
 ");
 
+// Dynamic assets with thumbnail and rating
+$assets = $conn->query("
+    SELECT ua.id, ua.title, ua.type, ua.price, ua.thumbnail,
+           COALESCE(AVG(r.rating),0) AS avg_rating, COUNT(r.id) AS review_count
+    FROM user_assets ua
+    LEFT JOIN reviews r ON r.target_type = 'asset' AND r.target_id = ua.id
+    GROUP BY ua.id
+    ORDER BY ua.created_at DESC LIMIT 8
+");
+
 $categoryIcons = ['PNG' => '🖼️', 'SFX' => '🔊', 'CC' => '🎨', 'VFX' => '✨'];
+
+function starDisplay($rating) {
+    $rating = round($rating);
+    return str_repeat('★', $rating) . str_repeat('☆', 5 - $rating);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -83,27 +100,35 @@ $categoryIcons = ['PNG' => '🖼️', 'SFX' => '🔊', 'CC' => '🎨', 'VFX' => 
         .main-container { max-width: 1100px; margin: 0 auto; padding: 0 20px 80px 20px; }
         .section-header { margin-bottom: 22px; }
         .section-title { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .section-subtitle { font-size: 13px; color: #9ca3af; margin-top: 4px; }
 
-        .materials-grid, .assets-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 18px; margin-bottom: 60px; }
-        
-        .material-card, .asset-card { background: #11131c; border-radius: 12px; padding: 22px; border: 1px solid #1f2333; transition: 0.3s; position: relative; }
-        .material-card:hover, .asset-card:hover { transform: translateY(-3px); border-color: #8b5cf6; }
-        .material-icon, .asset-icon { width: 44px; height: 44px; border-radius: 8px; background: rgba(139, 92, 246, 0.12); display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 14px; }
-        .material-title, .asset-title { font-weight: 700; font-size: 16px; margin-bottom: 8px; }
-        .material-desc, .asset-desc { font-size: 12px; color: #9ca3af; line-height: 1.5; }
-        .badge { position: absolute; top: 16px; right: 16px; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
-        .badge-free { background: rgba(16, 185, 129, 0.15); color: #10b981; }
-        .badge-paid { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+        .grid-4 { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px; margin-bottom: 60px; }
+        .thumb-card { background: #11131c; border-radius: 12px; border: 1px solid #1f2333; overflow: hidden; transition: 0.3s; position: relative; }
+        .thumb-card:hover { transform: translateY(-3px); border-color: #8b5cf6; }
+        .thumb-img { width: 100%; height: 130px; object-fit: cover; display: block; background: #181a26; }
+        .thumb-fallback { width: 100%; height: 130px; display: flex; align-items: center; justify-content: center; font-size: 34px; background: rgba(139, 92, 246, 0.08); }
+        .thumb-body { padding: 16px; }
+        .thumb-title { font-weight: 700; font-size: 15px; margin-bottom: 6px; }
+        .thumb-desc { font-size: 12px; color: #9ca3af; line-height: 1.4; }
+        .price-badge { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+        .price-free { color: #10b981; }
+        .price-paid { color: #f59e0b; }
+        .stars-row { color: #f59e0b; font-size: 12px; margin-top: 6px; }
+        .stars-row span { color: #6b7280; margin-left: 4px; }
+        .btn-get { display: block; text-align: center; background: #8b5cf6; color: #fff; padding: 8px; border-radius: 6px; font-size: 12px; font-weight: 700; text-decoration: none; margin-top: 10px; }
+        .btn-get:hover { background: #7c3aed; }
 
         .editors-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; }
         .editor-card { background: #11131c; border-radius: 10px; padding: 18px; border: 1px solid #1f2333; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; }
         .editor-card:hover { border-color: #8b5cf6; transform: translateY(-3px); }
+        .editor-profile-link { text-decoration:none; color:inherit; }
         .editor-info h4 { font-size: 15px; font-weight: 700; }
+        .editor-info h4:hover { color: #a78bfa; }
         .editor-info p { font-size: 12px; color: #9ca3af; margin-top: 2px; }
         .editor-meta { font-size: 12px; color: #a78bfa; margin-top: 4px; font-weight: 600; }
-        .btn-hire, .btn-download { background: #8b5cf6; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; }
-        .btn-hire:hover, .btn-download:hover { background: #7c3aed; }
-        .empty-msg { color: #6b7280; font-size: 13px; grid-column: 1 / -1; }
+        .btn-hire { background: #8b5cf6; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration:none; display:inline-block; }
+        .btn-hire:hover { background: #7c3aed; }
+        .empty-msg { color: #6b7280; font-size: 13px; }
     </style>
 </head>
 <body>
@@ -123,7 +148,8 @@ $categoryIcons = ['PNG' => '🖼️', 'SFX' => '🔊', 'CC' => '🎨', 'VFX' => 
             <li>
                 <a>Assets <span class="caret">▾</span></a>
                 <ul class="dropdown-menu">
-                    <li><a href="#assets">Free & Paid Assets</a></li>
+                    <li><a href="assets.php#free">Free Assets</a></li>
+                    <li><a href="assets.php#paid">Paid Assets</a></li>
                 </ul>
             </li>
             <li><a href="#materials">Materials</a></li>
@@ -148,48 +174,62 @@ $categoryIcons = ['PNG' => '🖼️', 'SFX' => '🔊', 'CC' => '🎨', 'VFX' => 
         <p class="hero-subtitle">Get high-quality PNGs, Sound Effects (SFX), Motion Presets, Color Grading CC packs, or hire expert freelance video editors for your next viral project.</p>
         <div class="hero-btns">
             <a href="#editors" class="btn-primary">Hire Video Editors</a>
-            <a href="#assets" class="btn-secondary">Explore Assets</a>
+            <a href="#materials" class="btn-secondary">Explore Asset Packs</a>
         </div>
     </section>
 
     <div class="main-container">
 
-        <!-- Assets Section (NEWLY ADDED) -->
-        <section id="assets">
+        <!-- Community Assets (dynamic, with thumbnails + ratings) -->
+        <section id="assets-preview">
             <div class="section-header">
                 <div class="section-title">📦 Community Assets</div>
             </div>
-            <div class="assets-grid">
+            <div class="grid-4">
                 <?php if ($assets && $assets->num_rows > 0): ?>
                     <?php while ($a = $assets->fetch_assoc()): ?>
-                        <div class="asset-card">
-                            <span class="badge <?php echo $a['type'] === 'paid' ? 'badge-paid' : 'badge-free'; ?>">
-                                <?php echo $a['type'] === 'paid' ? '₹' . htmlspecialchars($a['price']) : 'FREE'; ?>
+                        <div class="thumb-card">
+                            <span class="price-badge <?php echo $a['type'] === 'free' ? 'price-free' : 'price-paid'; ?>">
+                                <?php echo $a['type'] === 'free' ? 'FREE' : '₹' . htmlspecialchars($a['price']); ?>
                             </span>
-                            <div class="asset-icon">📦</div>
-                            <div class="asset-title"><?php echo htmlspecialchars($a['title']); ?></div>
-                            <div class="asset-desc" style="margin-bottom: 12px;">Uploaded by @<?php echo htmlspecialchars($a['username']); ?></div>
-                            <a href="<?php echo htmlspecialchars($a['file_path']); ?>" class="btn-download" download>Download</a>
+                            <?php if ($a['thumbnail']): ?>
+                                <img src="<?php echo htmlspecialchars($a['thumbnail']); ?>" class="thumb-img" alt="">
+                            <?php else: ?>
+                                <div class="thumb-fallback">📦</div>
+                            <?php endif; ?>
+                            <div class="thumb-body">
+                                <div class="thumb-title"><?php echo htmlspecialchars($a['title']); ?></div>
+                                <div class="stars-row"><?php echo starDisplay($a['avg_rating']); ?> <span>(<?php echo $a['review_count']; ?>)</span></div>
+                                <a href="review.php?type=asset&id=<?php echo $a['id']; ?>" class="btn-get">View & Review</a>
+                            </div>
                         </div>
                     <?php endwhile; ?>
                 <?php else: ?>
-                    <p class="empty-msg">No assets uploaded yet. Be the first — upload from your profile!</p>
+                    <p class="empty-msg">No assets uploaded yet.</p>
                 <?php endif; ?>
             </div>
         </section>
 
-        <!-- Materials Section -->
+        <!-- Materials Section (dynamic, with thumbnails) -->
         <section id="materials">
             <div class="section-header">
                 <div class="section-title">🖼️ Editing Materials & Resources</div>
             </div>
-            <div class="materials-grid">
+            <div class="grid-4">
                 <?php if ($materials && $materials->num_rows > 0): ?>
                     <?php while ($m = $materials->fetch_assoc()): ?>
-                        <div class="material-card">
-                            <div class="material-icon"><?php echo $categoryIcons[$m['category']] ?? '📁'; ?></div>
-                            <div class="material-title"><?php echo htmlspecialchars($m['title']); ?></div>
-                            <div class="material-desc"><?php echo htmlspecialchars($m['category']); ?> material uploaded by a community creator.</div>
+                        <div class="thumb-card">
+                            <?php if ($m['thumbnail']): ?>
+                                <img src="<?php echo htmlspecialchars($m['thumbnail']); ?>" class="thumb-img" alt="">
+                            <?php else: ?>
+                                <div class="thumb-fallback"><?php echo $categoryIcons[$m['category']] ?? '📁'; ?></div>
+                            <?php endif; ?>
+                            <div class="thumb-body">
+                                <div class="thumb-title"><?php echo htmlspecialchars($m['title']); ?></div>
+                                <div class="thumb-desc"><?php echo htmlspecialchars($m['category']); ?> material uploaded by a community creator.</div>
+                                <div class="stars-row"><?php echo starDisplay($m['avg_rating']); ?> <span>(<?php echo $m['review_count']; ?>)</span></div>
+                                <a href="review.php?type=material&id=<?php echo $m['id']; ?>" class="btn-get">View & Review</a>
+                            </div>
                         </div>
                     <?php endwhile; ?>
                 <?php else: ?>
@@ -198,7 +238,7 @@ $categoryIcons = ['PNG' => '🖼️', 'SFX' => '🔊', 'CC' => '🎨', 'VFX' => 
             </div>
         </section>
 
-        <!-- Hire Editors Section -->
+        <!-- Hire Editors Section (dynamic, links to their profile) -->
         <section id="editors">
             <div class="section-header">
                 <div class="section-title">🎬 Hire Freelance Video Editors</div>
@@ -207,12 +247,15 @@ $categoryIcons = ['PNG' => '🖼️', 'SFX' => '🔊', 'CC' => '🎨', 'VFX' => 
                 <?php if ($editors && $editors->num_rows > 0): ?>
                     <?php while ($s = $editors->fetch_assoc()): ?>
                         <div class="editor-card">
-                            <div class="editor-info">
-                                <h4><?php echo htmlspecialchars($s['full_name'] ?: $s['username']); ?></h4>
-                                <p><?php echo htmlspecialchars($s['title']); ?></p>
-                                <div class="editor-meta"><?php echo $s['price'] ? '₹' . htmlspecialchars($s['price']) : 'Contact for price'; ?></div>
-                            </div>
-                            <button class="btn-hire">Hire</button>
+                            <a href="view_profile.php?user_id=<?php echo $s['owner_id']; ?>" class="editor-profile-link">
+                                <div class="editor-info">
+                                    <h4><?php echo htmlspecialchars($s['full_name'] ?: $s['username']); ?></h4>
+                                    <p><?php echo htmlspecialchars($s['title']); ?></p>
+                                    <div class="editor-meta"><?php echo $s['price'] ? '₹' . htmlspecialchars($s['price']) : 'Contact for price'; ?></div>
+                                    <div class="stars-row"><?php echo starDisplay($s['avg_rating']); ?> <span>(<?php echo $s['review_count']; ?>)</span></div>
+                                </div>
+                            </a>
+                            <a href="view_profile.php?user_id=<?php echo $s['owner_id']; ?>" class="btn-hire">View Profile</a>
                         </div>
                     <?php endwhile; ?>
                 <?php else: ?>

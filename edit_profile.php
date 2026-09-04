@@ -221,6 +221,9 @@ $stmt->close();
             <label>Upload File</label>
             <input type="file" name="asset_file" required>
 
+            <label>Preview Image (optional, shown as thumbnail)</label>
+            <input type="file" name="thumbnail" accept="image/*">
+
             <button type="submit" class="btn">Upload Asset</button>
         </form>
     </div>
@@ -255,6 +258,9 @@ $stmt->close();
 
             <label>Upload File</label>
             <input type="file" name="material_file" required>
+
+            <label>Preview Image (optional, shown as thumbnail)</label>
+            <input type="file" name="thumbnail" accept="image/*">
 
             <button type="submit" class="btn">Upload Material</button>
         </form>

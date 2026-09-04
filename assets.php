@@ -1,115 +1,63 @@
 <?php
 session_start();
-require_once 'php/db.php';
+require_once 'db.php';
 
-$freeAssets = $conn->query("
-    SELECT ua.id, ua.title, ua.file_path, u.username, u.full_name
-    FROM user_assets ua JOIN users u ON ua.user_id = u.id
-    WHERE ua.type = 'free' ORDER BY ua.created_at DESC
-");
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../login.php");
+    exit();
+}
 
-$paidAssets = $conn->query("
-    SELECT ua.id, ua.title, ua.price, ua.file_path, u.username, u.full_name
-    FROM user_assets ua JOIN users u ON ua.user_id = u.id
-    WHERE ua.type = 'paid' ORDER BY ua.created_at DESC
-");
-?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editing Assets - EditHub</title>
-    <link rel="stylesheet" href="css/style.css">
-    <style>
-        .container { max-width: 900px; margin: 40px auto; padding: 0 20px; }
-        .section-block { margin-bottom: 50px; }
-        .section-block h2 { margin-bottom: 6px; }
-        .section-block > p { color: #94a3b8; margin-bottom: 25px; }
-        .asset-list { display: flex; flex-direction: column; gap: 15px; }
-        .asset-item { background: #0b1428; border: 1px solid #1b2a48; padding: 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
-        .download-btn { background: #10b981; color: white; padding: 8px 16px; border-radius: 5px; text-decoration: none; font-size: 14px; }
-        .buy-btn { background: #3b82f6; color: white; padding: 8px 16px; border-radius: 5px; text-decoration: none; font-size: 14px; }
-        .disabled-btn { background: #475569; color: #94a3b8; padding: 8px 16px; border-radius: 5px; text-decoration: none; font-size: 14px; }
-        .asset-price { font-weight: bold; color: #fff; margin-right: 15px; }
-        .empty-msg { color: #64748b; font-size: 14px; }
-    </style>
-</head>
-<body>
+$user_id = $_SESSION['user_id'];
+$title   = trim($_POST['title'] ?? '');
+$type    = ($_POST['type'] ?? 'free') === 'paid' ? 'paid' : 'free';
+$price   = ($type === 'paid') ? trim($_POST['price'] ?? '') : null;
 
-    <header class="navbar">
-        <div class="logo">Edit<span>Hub</span></div>
-        <nav>
-            <a href="index.php">Home</a>
-            <a href="services.php">Services</a>
-            <a href="assets.php">Assets</a>
-            <?php if (isset($_SESSION['username'])): ?>
-                <a href="profile.php">Hi, <?php echo htmlspecialchars($_SESSION['username']); ?></a>
-                <a href="php/logout.php">Logout</a>
-            <?php else: ?>
-                <a href="login.php">Login</a>
-            <?php endif; ?>
-        </nav>
-    </header>
+if ($title === '' || !isset($_FILES['asset_file']) || $_FILES['asset_file']['error'] !== UPLOAD_ERR_OK) {
+    die("Please provide a title and select a valid file. <a href='../edit_profile.php'>Go back</a>");
+}
 
-    <div class="container">
+$uploadDir = dirname(__DIR__) . '/uploads/assets/';
+if (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true) && !is_dir($uploadDir)) {
+    die("Could not create 'uploads/assets/' folder. Create it manually. <a href='../edit_profile.php'>Go back</a>");
+}
+if (!is_writable($uploadDir)) {
+    die("Upload folder 'uploads/assets/' is not writable. <a href='../edit_profile.php'>Go back</a>");
+}
 
-        <!-- Free Assets -->
-        <div class="section-block" id="free">
-            <h2>Free Editing Resources</h2>
-            <p>Free LUTs, sound packs, and overlay effects uploaded by the community.</p>
+$allowedExt = ['zip', 'rar', 'mp4', 'mov', 'png', 'jpg', 'jpeg', 'wav', 'mp3', 'cube', 'mogrt'];
+$ext = strtolower(pathinfo($_FILES['asset_file']['name'], PATHINFO_EXTENSION));
+if (!in_array($ext, $allowedExt)) {
+    die("File type not allowed. Allowed: " . implode(', ', $allowedExt) . " <a href='../edit_profile.php'>Go back</a>");
+}
 
-            <div class="asset-list">
-                <?php if ($freeAssets && $freeAssets->num_rows > 0): ?>
-                    <?php while ($a = $freeAssets->fetch_assoc()): ?>
-                        <div class="asset-item">
-                            <div>
-                                <h4 style="color: #fff;"><?php echo htmlspecialchars($a['title']); ?></h4>
-                                <p style="color: #94a3b8; font-size: 13px;">By <?php echo htmlspecialchars($a['full_name'] ?: $a['username']); ?></p>
-                            </div>
-                            <?php if (isset($_SESSION['user_id'])): ?>
-                                <a href="<?php echo htmlspecialchars($a['file_path']); ?>" class="download-btn" download>Download Asset</a>
-                            <?php else: ?>
-                                <a href="login.php" class="disabled-btn">Login to Download</a>
-                            <?php endif; ?>
-                        </div>
-                    <?php endwhile; ?>
-                <?php else: ?>
-                    <p class="empty-msg">No free assets uploaded yet.</p>
-                <?php endif; ?>
-            </div>
-        </div>
+$safeName    = uniqid('asset_') . '.' . $ext;
+$destination = $uploadDir . $safeName;
+if (!move_uploaded_file($_FILES['asset_file']['tmp_name'], $destination)) {
+    die("File upload failed. Check folder permissions. <a href='../edit_profile.php'>Go back</a>");
+}
+$filePathForDb = 'uploads/assets/' . $safeName;
 
-        <!-- Paid Assets -->
-        <div class="section-block" id="paid">
-            <h2>Premium Asset Packs</h2>
-            <p>High-end packs uploaded by creators for professional-quality edits.</p>
+// Optional preview image
+$thumbPathForDb = null;
+if (isset($_FILES['thumbnail']) && $_FILES['thumbnail']['error'] === UPLOAD_ERR_OK) {
+    $imgExt = strtolower(pathinfo($_FILES['thumbnail']['name'], PATHINFO_EXTENSION));
+    $allowedImg = ['png', 'jpg', 'jpeg', 'webp'];
+    if (in_array($imgExt, $allowedImg)) {
+        $imgName = uniqid('preview_') . '.' . $imgExt;
+        $imgDest = $uploadDir . $imgName;
+        if (move_uploaded_file($_FILES['thumbnail']['tmp_name'], $imgDest)) {
+            $thumbPathForDb = 'uploads/assets/' . $imgName;
+        }
+    }
+}
 
-            <div class="asset-list">
-                <?php if ($paidAssets && $paidAssets->num_rows > 0): ?>
-                    <?php while ($a = $paidAssets->fetch_assoc()): ?>
-                        <div class="asset-item">
-                            <div>
-                                <h4 style="color: #fff;"><?php echo htmlspecialchars($a['title']); ?></h4>
-                                <p style="color: #94a3b8; font-size: 13px;">By <?php echo htmlspecialchars($a['full_name'] ?: $a['username']); ?></p>
-                            </div>
-                            <div style="display:flex; align-items:center;">
-                                <span class="asset-price">₹<?php echo htmlspecialchars($a['price']); ?></span>
-                                <?php if (isset($_SESSION['user_id'])): ?>
-                                    <a href="<?php echo htmlspecialchars($a['file_path']); ?>" class="buy-btn">Buy Now</a>
-                                <?php else: ?>
-                                    <a href="login.php" class="disabled-btn">Login to Buy</a>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    <?php endwhile; ?>
-                <?php else: ?>
-                    <p class="empty-msg">No paid assets uploaded yet.</p>
-                <?php endif; ?>
-            </div>
-        </div>
+$stmt = $conn->prepare("INSERT INTO user_assets (user_id, title, type, price, file_path, thumbnail) VALUES (?, ?, ?, ?, ?, ?)");
+$stmt->bind_param("isssss", $user_id, $title, $type, $price, $filePathForDb, $thumbPathForDb);
+if (!$stmt->execute()) {
+    die("Database insert failed: " . $stmt->error . " <a href='../edit_profile.php'>Go back</a>");
+}
+$stmt->close();
+$conn->close();
 
-    </div>
-
-</body>
-</html>
+header("Location: ../edit_profile.php?asset_uploaded=1");
+exit();
