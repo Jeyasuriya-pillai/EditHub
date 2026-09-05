@@ -1,107 +1,99 @@
+<?php session_start(); if (isset($_SESSION['user_id'])) { header("Location: home.php"); exit(); } ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>EditHub - Authentication</title>
-    <link rel="stylesheet" href="css/style.css">
-    <style>
-        .auth-container { max-width: 400px; margin: 60px auto; background: #0b1428; border: 1px solid #1b2a48; border-radius: 12px; padding: 30px; color: white; }
-        .auth-container h2 { text-align: center; color: #8b5cf6; margin-bottom: 20px; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-size: 13px; color: #94a3b8; margin-bottom: 5px; }
-        .form-group input { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #1b2a48; background: #1e293b; color: white; box-sizing: border-box; }
-        .notice { background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; color: #f87171; padding: 10px; border-radius: 6px; font-size: 12px; margin-bottom: 15px; }
-        .btn-submit { width: 100%; background: #8b5cf6; color: white; padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        .toggle-link { text-align: center; margin-top: 15px; font-size: 13px; }
-        .toggle-link a { color: #8b5cf6; text-decoration: none; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EditHub - Sign In</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+    .auth-wrap { min-height: calc(100vh - 65px); display: flex; align-items: center; justify-content: center; padding: 40px 20px; }
+    .auth-box { width: 100%; max-width: 400px; }
+    .auth-box h2 { font-size: 26px; margin-bottom: 6px; }
+    .auth-sub { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+    .toggle-row { text-align: center; margin-top: 20px; font-size: 13px; color: var(--muted); }
+    .toggle-row a { color: var(--accent); text-decoration: none; font-weight: 600; cursor: pointer; }
+    .toggle-row a:hover { text-decoration: underline; }
+    .divider-links { text-align:center; font-size:13px; color:var(--muted-2); margin-top:14px; }
+</style>
 </head>
 <body>
 
-    <div class="auth-container">
-        <!-- Login Form (Default Visible) -->
-        <div id="loginForm">
-            <h2>Login to EditHub</h2>
-            <form action="php/login_process.php" method="POST">
-                <div class="form-group">
-                    <label>Username (ID)</label>
-                    <input type="text" name="username" required>
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" name="password" required>
-                </div>
-                <button type="submit" class="btn-submit">Login</button>
-            </form>
-            <div class="toggle-link">
-                <a href="#" onclick="showForm('forgotForm')">Forgot Password?</a> | 
-                <a href="#" onclick="showForm('registerForm')">Create Account</a>
-            </div>
-        </div>
+<a href="index.php" class="eh-logo" style="padding:20px 40px; display:inline-flex;">Edit<span>Hub</span></a>
 
-        <!-- Registration Form -->
-        <div id="registerForm" style="display: none;">
-            <h2>Create EditHub Account</h2>
-            <div class="notice">
-                ⚠️ <b>Important Notice:</b> Save your recovery pass carefully! If you forget it, you will lose your account permanently.
-            </div>
-            <form action="php/register_process.php" method="POST">
-                <div class="form-group">
-                    <label>Username (ID)</label>
-                    <input type="text" name="username" required>
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" name="password" required>
-                </div>
-                <div class="form-group">
-                    <label>Recovery Pass Phrase</label>
-                    <input type="text" name="recovery_key" placeholder="e.g., EditHub@2026#JX" required>
-                </div>
-                <button type="submit" class="btn-submit">Sign Up</button>
-            </form>
-            <div class="toggle-link">
-                Already have an account? <a href="#" onclick="showForm('loginForm')">Login</a>
-            </div>
-        </div>
+<div class="auth-wrap">
+<div class="auth-box">
 
-        <!-- Forgot Password Form -->
-        <div id="forgotForm" style="display: none;">
-            <h2>Reset Password</h2>
-            <form action="php/reset_process.php" method="POST">
-                <div class="form-group">
-                    <label>Username (ID)</label>
-                    <input type="text" name="username" required>
-                </div>
-                <div class="form-group">
-                    <label>Recovery Question: Enter your EditHub recovery phrase</label>
-                    <input type="text" name="recovery_key" placeholder="Enter recovery pass..." required>
-                </div>
-                <div class="form-group">
-                    <label>New Password</label>
-                    <input type="password" name="new_password" required>
-                </div>
-                <button type="submit" class="btn-submit">Reset Password</button>
-            </form>
-            <div class="toggle-link">
-                <a href="#" onclick="showForm('loginForm')">Back to Login</a>
-            </div>
+    <!-- Login -->
+    <div id="loginForm" class="card card-pad card-top-accent">
+        <h2>Sign in</h2>
+        <p class="auth-sub">Access your editor toolkit and dashboard.</p>
+        <form action="php/login_process.php" method="POST">
+            <label>Username (ID)</label>
+            <input type="text" name="username" required>
+            <label>Password</label>
+            <input type="password" name="password" required>
+            <button type="submit" class="btn btn-primary btn-block" style="margin-top:22px;">Sign In</button>
+        </form>
+        <div class="divider-links">
+            <a href="#" onclick="showForm('forgotForm'); return false;" style="color:var(--muted);">Forgot password?</a>
+        </div>
+        <div class="toggle-row">
+            New to EditHub? <a onclick="showForm('registerForm')">Create an account</a>
         </div>
     </div>
 
-    <script>
-        function showForm(formId) {
-            document.getElementById('registerForm').style.display = 'none';
-            document.getElementById('loginForm').style.display = 'none';
-            document.getElementById('forgotForm').style.display = 'none';
-            document.getElementById(formId).style.display = 'block';
-        }
+    <!-- Register -->
+    <div id="registerForm" class="card card-pad card-top-accent" style="display:none;">
+        <h2>Create account</h2>
+        <p class="auth-sub">Join the editor community.</p>
+        <div class="notice-msg">
+            ⚠️ Save your recovery pass phrase somewhere safe. If you lose it, your account cannot be recovered.
+        </div>
+        <form action="php/register_process.php" method="POST">
+            <label>Username (ID)</label>
+            <input type="text" name="username" required>
+            <label>Password</label>
+            <input type="password" name="password" required>
+            <label>Recovery Pass Phrase</label>
+            <input type="text" name="recovery_key" placeholder="e.g. EditHub@2026#JX" required>
+            <button type="submit" class="btn btn-primary btn-block" style="margin-top:22px;">Sign Up</button>
+        </form>
+        <div class="toggle-row">
+            Already have an account? <a onclick="showForm('loginForm')">Sign in</a>
+        </div>
+    </div>
 
-        // URL parameter checking for direct access to register
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('action') === 'signup') {
-            showForm('registerForm');
-        }
-    </script>
+    <!-- Forgot Password -->
+    <div id="forgotForm" class="card card-pad card-top-accent" style="display:none;">
+        <h2>Reset password</h2>
+        <p class="auth-sub">Use your recovery pass phrase to set a new password.</p>
+        <form action="php/reset_process.php" method="POST">
+            <label>Username (ID)</label>
+            <input type="text" name="username" required>
+            <label>Recovery Pass Phrase</label>
+            <input type="text" name="recovery_key" placeholder="Enter recovery pass..." required>
+            <label>New Password</label>
+            <input type="password" name="new_password" required>
+            <button type="submit" class="btn btn-primary btn-block" style="margin-top:22px;">Reset Password</button>
+        </form>
+        <div class="toggle-row">
+            <a onclick="showForm('loginForm')">Back to sign in</a>
+        </div>
+    </div>
+
+</div>
+</div>
+
+<script>
+    function showForm(formId) {
+        document.getElementById('registerForm').style.display = 'none';
+        document.getElementById('loginForm').style.display = 'none';
+        document.getElementById('forgotForm').style.display = 'none';
+        document.getElementById(formId).style.display = 'block';
+    }
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('action') === 'signup') { showForm('registerForm'); }
+</script>
 </body>
 </html>

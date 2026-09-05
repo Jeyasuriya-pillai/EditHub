@@ -7,11 +7,12 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-$user_id   = $_SESSION['user_id'];
-$full_name = trim($_POST['full_name'] ?? '');
-$gender    = $_POST['gender'] ?? '';
-$bio       = trim($_POST['bio'] ?? '');
-$tag       = $_POST['tag'] ?? 'normal';
+$user_id       = $_SESSION['user_id'];
+$full_name     = trim($_POST['full_name'] ?? '');
+$contact_email = trim($_POST['contact_email'] ?? '');
+$gender        = $_POST['gender'] ?? '';
+$bio           = trim($_POST['bio'] ?? '');
+$tag           = $_POST['tag'] ?? 'normal';
 
 $allowed_gender = ['male', 'female'];
 $gender = in_array($gender, $allowed_gender) ? $gender : null;
@@ -74,6 +75,7 @@ if ($profilePhotoPath !== null) {
     $stmt = $conn->prepare("
         UPDATE users
         SET full_name = ?,
+            contact_email = ?,
             gender = ?,
             bio = ?,
             tag = ?,
@@ -82,8 +84,9 @@ if ($profilePhotoPath !== null) {
     ");
 
     $stmt->bind_param(
-        "sssssi",
+        "ssssssi",
         $full_name,
+        $contact_email,
         $gender,
         $bio,
         $tag,
@@ -96,6 +99,7 @@ if ($profilePhotoPath !== null) {
     $stmt = $conn->prepare("
         UPDATE users
         SET full_name = ?,
+            contact_email = ?,
             gender = ?,
             bio = ?,
             tag = ?
@@ -103,8 +107,9 @@ if ($profilePhotoPath !== null) {
     ");
 
     $stmt->bind_param(
-        "ssssi",
+        "sssssi",
         $full_name,
+        $contact_email,
         $gender,
         $bio,
         $tag,

@@ -24,7 +24,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $check_stmt = $conn->prepare("SELECT id FROM users WHERE username = ?");
     $check_stmt->bind_param("s", $username);
     $check_stmt->execute();
-    
+
     if ($check_stmt->get_result()->num_rows > 0) {
         echo "<script>alert('Username already taken!'); window.history.back();</script>";
     } else {
@@ -32,7 +32,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt->bind_param("sss", $username, $hashed_password, $hashed_recovery);
 
         if ($stmt->execute()) {
-            echo "<script>alert('Registration Successful! Keep your recovery key safe.'); window.location.href='../login.html';</script>";
+            echo "<script>alert('Registration Successful! Keep your recovery key safe.'); window.location.href='../login.php';</script>";
         } else {
             echo "Error: " . $stmt->error;
         }

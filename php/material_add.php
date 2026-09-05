@@ -23,10 +23,10 @@ if (!is_writable($uploadDir)) {
     die("Upload folder 'uploads/materials/' is not writable. <a href='../edit_profile.php'>Go back</a>");
 }
 
-$allowedExt = ['zip', 'rar', 'mp4', 'mov', 'png', 'jpg', 'jpeg', 'wav', 'mp3', 'cube', 'mogrt'];
+$allowedExt = ['zip', 'rar', '7z', 'mp4', 'mov', 'avi', 'mkv', 'webm', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'psd', 'ai', 'pdf', 'wav', 'mp3', 'aac', 'flac', 'ogg', 'm4a', 'aif', 'aiff', 'wma', 'opus', 'oga', 'cube', 'mogrt', '3dl', 'lut', 'ttf', 'otf', 'aep', 'prproj', 'drp', 'json', 'xml', 'srt', 'ass', 'csv'];
 $ext = strtolower(pathinfo($_FILES['material_file']['name'], PATHINFO_EXTENSION));
 if (!in_array($ext, $allowedExt)) {
-    die("File type not allowed. Allowed: " . implode(', ', $allowedExt) . " <a href='../edit_profile.php'>Go back</a>");
+    die("File type '.$ext' not allowed. Allowed: " . implode(', ', $allowedExt) . " <a href='../edit_profile.php'>Go back</a>");
 }
 
 $safeName    = uniqid('material_') . '.' . $ext;
