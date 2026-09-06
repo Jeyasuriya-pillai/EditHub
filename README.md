@@ -498,13 +498,3 @@ This project is not intended to promote copyright infringement, piracy, or unaut
 Any user-uploaded content remains the responsibility of the respective user or content owner.
 
 ---
-
-# ⭐ Support
-
-If you like this project, consider giving the repository a ⭐ on GitHub!
-
----
-
-<p align="center">
-  Made with ❤️ by Jeyasuriya
-</p>
