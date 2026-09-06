@@ -94,8 +94,7 @@ function starDisplay($rating) {
     <section class="hero">
         <form action="search.php" method="GET">
             <div class="search-box">
-                <span class="search-icon">🔍</span>
-                <input type="text" name="q" class="search-input" placeholder="Search 5,000+ PNGs, SFX, CC Presets or Editors...">
+                <input type="text" name="q" class="search-input" placeholder="🔍 Search 5,000+ PNGs, SFX, CC Presets or Editors...">
             </div>
         </form>
         <h1>Best edit materials & top video editors in 2026</h1>

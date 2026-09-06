@@ -23,7 +23,7 @@ $__username = $_SESSION['username'] ?? '';
             </ul>
         </li>
         <?php if ($__loggedIn): ?>
-            <li><a href="home.php#materials">Materials</a></li>
+            <li><a href="materials.php">Materials</a></li>
             <li><a href="profile.php">Profile</a></li>
         <?php endif; ?>
     </ul>
