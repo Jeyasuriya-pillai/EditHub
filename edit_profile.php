@@ -9,7 +9,6 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 
-// Added contact_email column in query
 $stmt = $conn->prepare("SELECT username, full_name, gender, bio, tag, contact_email FROM users WHERE id = ?");
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
@@ -75,6 +74,12 @@ $stmt->close();
     <?php if (isset($_GET['updated'])): ?>
         <div class="success-msg">✅ Profile updated successfully.</div>
     <?php endif; ?>
+    <?php if (isset($_GET['email_updated'])): ?>
+        <div class="success-msg">✅ Contact email saved.</div>
+    <?php endif; ?>
+    <?php if (isset($_GET['email_removed'])): ?>
+        <div class="success-msg">✅ Contact email removed.</div>
+    <?php endif; ?>
 
     <div class="card card-pad" style="margin-bottom:28px;">
         <h2 style="font-size:18px; margin-bottom:8px;">👤 Profile info</h2>
@@ -84,9 +89,6 @@ $stmt->close();
         <form action="php/update_profile.php" method="POST">
             <label>Display name</label>
             <input type="text" name="full_name" value="<?php echo htmlspecialchars($user['full_name'] ?? ''); ?>" placeholder="Your name">
-
-            <label>Contact Email (For receiving hire/client inquiries)</label>
-            <input type="email" name="contact_email" value="<?php echo htmlspecialchars($user['contact_email'] ?? ''); ?>" placeholder="e.g. yourname@gmail.com" required>
 
             <label>Gender</label>
             <div class="radio-group">
@@ -106,6 +108,29 @@ $stmt->close();
 
             <button type="submit" class="btn btn-primary" style="margin-top:20px;">Save changes</button>
         </form>
+    </div>
+
+    <!-- ================= NEW: Contact Email - Add / Delete ================= -->
+    <div class="card card-pad" style="margin-bottom:28px;">
+        <h2 style="font-size:18px; margin-bottom:4px;">📧 Contact email</h2>
+        <p style="color:var(--muted); font-size:13px; margin-bottom:16px;">Used by clients to reach you for hire/service inquiries.</p>
+
+        <?php if (!empty($user['contact_email'])): ?>
+            <div class="list-item">
+                <div>
+                    <h4><?php echo htmlspecialchars($user['contact_email']); ?></h4>
+                    <p>This is currently visible to clients.</p>
+                </div>
+                <a href="php/email_delete.php" class="btn btn-danger btn-sm" onclick="return confirm('Remove your contact email?');">Remove</a>
+            </div>
+        <?php else: ?>
+            <div class="divider"></div>
+            <form action="php/email_add.php" method="POST">
+                <label>Contact email</label>
+                <input type="email" name="contact_email" placeholder="e.g. yourname@gmail.com" required>
+                <button type="submit" class="btn btn-primary" style="margin-top:20px;">Save email</button>
+            </form>
+        <?php endif; ?>
     </div>
 
     <div class="card card-pad" style="margin-bottom:28px;">
