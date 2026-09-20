@@ -251,8 +251,6 @@ EditHub/
 
 # 📸 Project Screenshots
 
-Add your website screenshots inside an `images` folder.
-
 ## 🏠 Banner Page
 
 ![Banner Page](images/banner.png) 
