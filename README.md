@@ -1,10 +1,6 @@
 # 🎬 EditHub – Video Editing Services & Asset Marketplace
 
 <p align="center">
-  <img src="images/banner.png" alt="EditHub Banner" width="100%">
-</p>
-
-<p align="center">
   A platform for Video Editors, Content Creators, Editing Assets, Materials and Professional Editing Services.
 </p>
 
@@ -257,9 +253,13 @@ EditHub/
 
 Add your website screenshots inside an `images` folder.
 
+## 🏠 Banner Page
+
+![Banner Page](images/banner.png) 
+
 ## 🏠 Home Page
 
-![Home Page](images/home.png)
+![Home Page](images/homepage.png)
 
 ---
 
@@ -271,13 +271,13 @@ Add your website screenshots inside an `images` folder.
 
 ## 📝 Registration Page
 
-![Registration Page](images/register.png)
+![Registration Page](images/registration.png)
 
 ---
 
 ## 🔑 Password Recovery Page
 
-![Reset Password](images/reset.png)
+![Reset Password](images/recovery.png)
 
 ---
 
@@ -301,13 +301,13 @@ Add your website screenshots inside an `images` folder.
 
 ## 💼 Services / Hire Editor
 
-![Services Page](images/services.png)
+![Services Page](images/hire.png)
 
 ---
 
 ## ⭐ Reviews & Ratings
 
-![Reviews Page](images/review.png)
+![Reviews Page](images/reviews.png)
 
 ---
 
