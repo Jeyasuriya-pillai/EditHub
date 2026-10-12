@@ -1,16 +1,34 @@
+
 <?php
-// Ye line har mysqli error ko turant exception ke roop mein dikhayegi (debugging ke liye)
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
-$servername = "127.0.0.1";
-$port       = 3307;
-$username   = "root";
-$password   = "";
-$dbname     = "edithub";
+$host = getenv('DB_HOST');
+$port = (int) getenv('DB_PORT');
+$user = getenv('DB_USER');
+$password = getenv('DB_PASSWORD');
+$database = getenv('DB_NAME');
 
-$conn = mysqli_connect($servername, $username, $password, $dbname, $port);
+// CA certificate is stored in the project root's certs folder.
+$ca = __DIR__ . '/../certs/ca.pem';
+
+$conn = mysqli_init();
 
 if (!$conn) {
-    die("Connection failed: " . mysqli_connect_error());
+    die('Database connection initialization failed.');
 }
+
+mysqli_ssl_set($conn, null, null, $ca, null, null);
+
+mysqli_real_connect(
+    $conn,
+    $host,
+    $user,
+    $password,
+    $database,
+    $port,
+    null,
+    MYSQLI_CLIENT_SSL
+);
+
+mysqli_set_charset($conn, 'utf8mb4');
 ?>
