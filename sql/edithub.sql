@@ -151,9 +151,9 @@ VALUES
 (1, 1, 'luffy', 'PNG', 'uploads/materials/material_6abd22976f903.jpg', 'uploads/materials/preview_6abd22976fe2b.jpg', '2026-09-30 14:54:15'),
 (2, 1, 'luffy', 'PNG', 'uploads/materials/material_6abd22a502920.jpg', 'uploads/materials/preview_6abd22a50305b.jpg', '2026-09-30 14:54:29');
 
--- --------------------------------------------------------
+-- ---------------------------------------------------------
 -- Table structure for table user_services
--- --------------------------------------------------------
+-- ---------------------------------------------------------
 
 CREATE TABLE user_services (
     id INT(11) NOT NULL AUTO_INCREMENT,
