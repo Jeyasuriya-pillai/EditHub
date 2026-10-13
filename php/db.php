@@ -3,16 +3,18 @@
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
 $host = getenv('MYSQL_ADDON_HOST');
-$port = (int) getenv('MYSQL_ADDON_PORT');
+$port = (int) (getenv('MYSQL_ADDON_PORT') ?: 3306);
 $user = getenv('MYSQL_ADDON_USER');
 $password = getenv('MYSQL_ADDON_PASSWORD');
 $database = getenv('MYSQL_ADDON_DB');
 
-$conn = mysqli_init();
-
-if (!$conn) {
-    die('Database connection initialization failed.');
+if (!$host || !$user || !$password || !$database) {
+    error_log('Database configuration missing: check Clever Cloud MySQL environment variables.');
+    http_response_code(500);
+    exit('Database configuration is missing. Please try again later.');
 }
+
+$conn = mysqli_init();
 
 mysqli_real_connect(
     $conn,
