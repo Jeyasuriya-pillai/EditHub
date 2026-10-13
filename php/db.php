@@ -2,14 +2,11 @@
 <?php
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
-$host = getenv('DB_HOST');
-$port = (int) getenv('DB_PORT');
-$user = getenv('DB_USER');
-$password = getenv('DB_PASSWORD');
-$database = getenv('DB_NAME');
-
-// CA certificate is stored in the project root's certs folder.
-$ca = __DIR__ . '/../certs/ca.pem';
+$host = getenv('MYSQL_ADDON_HOST');
+$port = (int) getenv('MYSQL_ADDON_PORT');
+$user = getenv('MYSQL_ADDON_USER');
+$password = getenv('MYSQL_ADDON_PASSWORD');
+$database = getenv('MYSQL_ADDON_DB');
 
 $conn = mysqli_init();
 
@@ -17,17 +14,13 @@ if (!$conn) {
     die('Database connection initialization failed.');
 }
 
-mysqli_ssl_set($conn, null, null, $ca, null, null);
-
 mysqli_real_connect(
     $conn,
     $host,
     $user,
     $password,
     $database,
-    $port,
-    null,
-    MYSQLI_CLIENT_SSL
+    $port
 );
 
 mysqli_set_charset($conn, 'utf8mb4');
