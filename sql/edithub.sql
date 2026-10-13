@@ -1,10 +1,9 @@
-
 -- phpMyAdmin SQL Dump
 -- version 5.2.1
 -- Host: 127.0.0.1:3307
 -- Database: defaultdb
 
-USE bu23bkklyg1fbu7zw6on;
+USE defaultdb;
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
