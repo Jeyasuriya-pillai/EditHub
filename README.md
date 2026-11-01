@@ -1,7 +1,12 @@
-
 # 🎬 EditHub – Video Editing Services & Asset Marketplace
 
 EditHub is a web-based platform that connects video editors and content creators. Users can explore editing assets and materials, showcase editing services, manage profiles, upload creative resources, and share ratings and reviews.
+
+## 🌐 Live Demo
+
+🚀 **Live Website:** https://edit-hub.cleverapps.io/
+
+💻 **GitHub Repository:** https://github.com/Jeyasuriya-pillai/EditHub
 
 ## ✨ Main Features
 
@@ -76,7 +81,7 @@ Import the required SQL schema and tables. If a complete database export is not 
 
 ### Step 5: Configure the Database
 
-Open:
+Open the database configuration file:
 
 ```text
 php/db.php
@@ -110,7 +115,9 @@ The web server must have permission to write uploaded files to these directories
 1. Start Apache and MySQL from the XAMPP Control Panel.
 2. Open your browser and visit:
 
-   `http://localhost/EditHub/`
+   ```text
+   http://localhost/EditHub/
+   ```
 
 3. Register a new account.
 4. Log in using your credentials.
@@ -144,43 +151,54 @@ DB_PASSWORD=your_database_password
 ## 📸 Screenshots
 
 ### Banner Page
+
 ![EditHub Banner](images/banner.png)
 
 ### Home Page
+
 ![Home Page](images/homepage.png)
 
 ### Login Page
+
 ![Login Page](images/login.png)
 
 ### Registration Page
+
 ![Registration Page](images/registration.png)
 
 ### Password Recovery
+
 ![Password Recovery](images/recovery.png)
 
 ### User Profile
+
 ![User Profile](images/profile.png)
 
 ### Assets Marketplace
+
 ![Assets Page](images/assets.png)
 
 ### Materials Section
+
 ![Materials Page](images/materials.png)
 
 ### Services / Hire Editor
+
 ![Hire Editor](images/hire.png)
 
 ### Ratings and Reviews
+
 ![Reviews Page](images/reviews.png)
 
-*Note: Screenshots will appear on GitHub when the corresponding image files exist at the specified paths.*
+**Note:** Screenshots will appear on GitHub when the corresponding image files exist at the specified paths.
 
 ## 🌐 Live Deployment
 
-**Live Website:** Add your active deployment URL here.
+**🚀 Live Website:** https://edit-hub.cleverapps.io/
 
-**GitHub Repository:**  
-https://github.com/Jeyasuriya-pillai/EditHub
+**💻 GitHub Repository:** https://github.com/Jeyasuriya-pillai/EditHub
+
+EditHub provides a platform for content creators to explore creative resources and connect with video editing professionals.
 
 ## 🎯 Project Objectives
 
