@@ -4,7 +4,7 @@ EditHub is a web-based platform that connects video editors and content creators
 
 ## 🌐 Live Demo
 
-🚀 **Live Website:** https://edit-hub.cleverapps.io/
+🚀 **Live Website:** https://edithub.freedev.app/
 
 💻 **GitHub Repository:** https://github.com/Jeyasuriya-pillai/EditHub
 
@@ -97,6 +97,8 @@ $database = "edithub";
 ```
 
 Use the correct port if your MySQL/MariaDB server runs on a non-default port.
+
+**Important:** Use your hosting provider's database credentials for the live website. Do not upload production passwords to a public GitHub repository.
 
 ### Step 6: Check Upload Directories
 
@@ -194,9 +196,9 @@ DB_PASSWORD=your_database_password
 
 ## 🌐 Live Deployment
 
-**🚀 Live Website:** https://edit-hub.cleverapps.io/
+🚀 **Live Website:** https://edithub.freedev.app/
 
-**💻 GitHub Repository:** https://github.com/Jeyasuriya-pillai/EditHub
+💻 **GitHub Repository:** https://github.com/Jeyasuriya-pillai/EditHub
 
 EditHub provides a platform for content creators to explore creative resources and connect with video editing professionals.
 
